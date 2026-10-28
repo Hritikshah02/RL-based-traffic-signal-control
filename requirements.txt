@@ -1,5 +1,13 @@
-streamlit
+eclipse-sumo==1.28.0
+libsumo==1.28.0
+sumo-rl==1.4.5
+gymnasium>=1.0
 numpy
 pandas
-matplotlib
+torch
+stable-baselines3>=2.3
+streamlit
 plotly
+matplotlib
+pyyaml
+pytest
