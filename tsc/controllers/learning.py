@@ -21,7 +21,7 @@ import yaml
 
 from tsc import MODELS_DIR, ROOT
 from tsc.controllers.base import Controller
-from tsc.env import APPROACHES, OBS_FNS, JunctionFeatures, MAX_GREEN, PHASE_NAMES
+from tsc.env import DUAL_PHASES, OBS_FNS, JunctionFeatures, PHASE_NAMES
 
 NUM_PHASES = len(PHASE_NAMES)
 # incoming lanes served by each green phase (fixed by the dataset's junction; env.phase_lanes)
@@ -45,12 +45,17 @@ def model_path(method: str) -> str:
 
 
 # ── Q-learning ───────────────────────────────────────────────────────────────
-QUEUE_BUCKETS = [4, 10]   # per-approach queue: 0-3 low, 4-9 medium, 10+ high
+QUEUE_BUCKETS = [4, 10]   # queue: 0-3 low, 4-9 medium, 10+ high
 
 
 def qtable_state(f: JunctionFeatures) -> Tuple[int, ...]:
-    """Discrete state: queue bucket per approach (N,E,S,W) + current phase + can-switch."""
-    buckets = tuple(int(np.searchsorted(QUEUE_BUCKETS, q, side="right")) for q in f.approach_queue)
+    """Discrete state: queue bucket per dual phase (NS-T, NS-L, EW-T, EW-L) + current phase + can-switch.
+
+    3^4 x 8 x 2 = 1,296 states. Dual-phase queues (rather than per-approach totals) separate
+    through and left-turn demand, which is what the phase choice actually depends on.
+    """
+    q = f.phase_queue
+    buckets = tuple(int(np.searchsorted(QUEUE_BUCKETS, q[p], side="right")) for p in DUAL_PHASES)
     return buckets + (f.current_phase, int(f.can_switch))
 
 
@@ -62,8 +67,8 @@ class QLearningController(Controller):
 
     def act(self, f: JunctionFeatures) -> int:
         values = self.q.get(qtable_state(f))
-        if values is None:   # unseen state: fall back to the longest queue
-            return int(np.argmax(f.phase_queue)) if f.can_switch else f.current_phase
+        if values is None:   # state never visited in training: keep the current phase
+            return f.current_phase
         return int(np.argmax(values))
 
 

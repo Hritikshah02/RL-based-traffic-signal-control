@@ -162,9 +162,14 @@ for fam, members in (("Rule-based", RULE_BASED), ("Learning", LEARNING)):
         y=ms, x=[agg.loc[m, (metric, "mean")] for m in ms], orientation="h", name=fam,
         marker=dict(color=family_color(ms[0]), cornerradius=4),
         error_x=dict(type="data", array=[agg.loc[m, (metric, "std")] for m in ms], thickness=1.5, width=4),
-        text=[f"{agg.loc[m, (metric, 'mean')]:.1f}" for m in ms], textposition="outside",
         hovertemplate="%{y}: %{x:.1f} " + unit + "<extra>" + fam + "</extra>",
     )
+# value labels sit just past each error bar so they never collide with it
+ends = [agg.loc[m, (metric, "mean")] + (agg.loc[m, (metric, "std")] if pd.notna(agg.loc[m, (metric, "std")]) else 0)
+        for m in order]
+fig.add_scatter(y=order, x=ends, mode="text", text=[f"  {agg.loc[m, (metric, 'mean')]:.1f}" for m in order],
+                textposition="middle right", showlegend=False, hoverinfo="skip")
+fig.update_xaxes(range=[0, max(ends) * 1.12])
 fig.update_layout(barmode="overlay", bargap=0.35, yaxis=dict(categoryorder="array", categoryarray=order))
 fig.update_xaxes(title=f"{label} ({unit}), mean ± std over seeds")
 st.plotly_chart(style(fig, 60 + 38 * len(order)), width="stretch")
@@ -200,10 +205,10 @@ ts = load_timeseries("long_day", _mtime(os.path.join(RESULTS, "timeseries", "lon
 if not ts.empty:
     st.subheader("Long period: 11 hours of real traffic, back to back")
     s1, s2 = st.columns([2, 3])
-    series = s1.radio("Series", ["queue", "delay", "throughput_vpm"], horizontal=True,
-                      format_func={"queue": "Queue (veh)", "delay": "Delay of departing vehicles (s)",
-                                   "throughput_vpm": "Throughput (veh/min)"}.get)
-    default = [m for m in ["Fixed", "Webster", "MaxPressure", "D3QN", "FRAP"] if m in methods]
+    series_names = {"queue": "Queue (veh)", "delay": "Delay of departing vehicles (s)",
+                    "throughput_vpm": "Throughput (veh/min)"}
+    series = s1.radio("Series", list(series_names), horizontal=True, format_func=series_names.get)
+    default = [m for m in ["Webster", "MaxPressure", "PressLight", "D3QN", "FRAP"] if m in methods]
     shown = s2.multiselect("Lines", methods, default=default or methods[:5])
     lines = (ts[ts["method"].isin(shown)].groupby(["method", "minute"])[series].mean()
              .groupby(level=0).transform(lambda s: s.rolling(10, min_periods=1).mean()).reset_index())
@@ -216,6 +221,7 @@ if not ts.empty:
     for h in range(1, 11):
         line_fig.add_vline(x=h, line_width=1, line_dash="dot", opacity=0.3)
     line_fig.update_layout(hovermode="x unified")
+    line_fig.update_yaxes(title=series_names[series])
     line_fig.update_xaxes(title="Hour of the run (each hour is a different real recording; 10-min rolling mean)")
     st.plotly_chart(style(line_fig, 420), width="stretch")
 
@@ -245,7 +251,9 @@ if os.path.exists(ablation_path):
     st.subheader("Ablation: what the reward function changed")
     st.caption("First training round: Q-learning, D3QN and PPO used the waiting-time-difference reward and "
                "validated on 2 moderate hours. Final round: queue-length reward + the heaviest training hour "
-               "added to validation (PressLight keeps its pressure reward in both). Mean delay (s), mean over seeds.")
+               "added to validation (PressLight keeps its pressure reward in both). Q-learning also moved to dual-phase "
+               "queue states and lost a longest-queue fallback that had flattered its round-1 score. "
+               "Mean delay (s), mean over seeds.")
     abl = pd.read_csv(ablation_path)
     groups = {"Test hours": TEST_TAGS, "Long day": ["long_day"], "Training hours": TRAIN_TAGS}
     rows = []

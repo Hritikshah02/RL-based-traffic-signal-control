@@ -111,3 +111,16 @@ metric aggregation, and a one-episode smoke test for each learning method.
 
 Multi-junction grid and coordination methods (CoLight), a live camera pipeline, and
 hardware.
+
+## Changes made during implementation
+
+- **Data:** used LibSignal's real single-junction Hangzhou hours instead of cropping the Jinan or Hangzhou grids,
+  because they ship a matching SUMO network and need no cropping.
+- **Reward (after ablation):** methods 6–8 moved from the waiting-time-difference reward to a queue-length reward.
+  Validation gained the heaviest train hour (`tmsxy_07`). Round-1 results are kept in
+  `results/ablation_wait_reward.csv`.
+- **Q-learning:** the state now uses dual-phase queue buckets, and unseen states keep the current phase
+  (no heuristic fallback).
+- **Dashboard:** the "replay one run" view was dropped in favour of a per-hour heatmap and the reward ablation
+  table. The legacy simulator is a Streamlit page (`pages/`) rather than a toggle.
+- The 5 rule-based controllers live in one module (`tsc/controllers/rule_based.py`).
