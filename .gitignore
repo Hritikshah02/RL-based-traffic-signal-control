@@ -4,3 +4,4 @@ __pycache__/
 data/sumo/
 results/tmp/
 kaggle/out/
+results/train_log.txt

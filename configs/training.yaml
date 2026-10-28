@@ -5,13 +5,13 @@ common:
   hours: 150                # simulated training hours per method
   gamma: 0.95               # one step = 5 s, so 0.95 looks ~1-2 minutes ahead
   eval_every: 10            # episodes between greedy checks on the validation hours
-  validation: [bctyc_07, qcyn_07]
+  validation: [bctyc_07, qcyn_07, tmsxy_07]   # incl. the heaviest train hour
 
 QLearning:
   alpha: 0.1
   eps_start: 1.0
   eps_end: 0.02
-  reward: wait
+  reward: queue
 
 dqn:                        # shared by D3QN, PressLight, FRAP
   lr: 0.0005
@@ -23,13 +23,13 @@ dqn:                        # shared by D3QN, PressLight, FRAP
   eps_end: 0.02
   eps_fraction: 0.4         # fraction of training spent decaying epsilon
 
-D3QN:       {obs: vector,     reward: wait}
+D3QN:       {obs: vector,     reward: queue}
 PressLight: {obs: presslight, reward: pressure}
 FRAP:       {obs: frap,       reward: queue}
 
 PPO:
   obs: vector
-  reward: wait
+  reward: queue
   lr: 0.0003
   n_steps: 720              # one episode per rollout
   batch: 180
