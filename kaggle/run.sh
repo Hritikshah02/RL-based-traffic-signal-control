@@ -3,6 +3,8 @@
 #
 #   kaggle/run.sh [methods] [hours]      e.g.  kaggle/run.sh all       or  kaggle/run.sh FRAP,PPO 300
 #
+# TSC_COPY=0 keeps the downloaded models in kaggle/out/result/models instead of overwriting models/.
+#
 # Needs: Kaggle token in ~/.kaggle (access_token or kaggle.json), a recent `kaggle` CLI
 # (set KAGGLE=/path/to/kaggle to choose one), and the branch pushed to GitHub.
 set -euo pipefail
@@ -54,4 +56,8 @@ while true; do
   sleep 60
 done
 $KAGGLE kernels output "$USER_NAME/$SLUG" -p "$OUT"
-cp -v "$OUT"/models/* models/
+if [ "${TSC_COPY:-1}" = 1 ]; then
+  cp -v "$OUT"/models/* models/
+else
+  echo "Models saved to $OUT/models (models/ left unchanged)"
+fi
