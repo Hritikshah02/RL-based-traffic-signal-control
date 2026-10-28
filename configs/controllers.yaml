@@ -1,0 +1,26 @@
+# Parameters of the rule-based controllers (all times in seconds).
+# Learning methods' hyper-parameters live in configs/training.yaml.
+
+fixed:
+  green: 30                 # green per dual phase (NS-T, NS-L, EW-T, EW-L)
+
+webster:
+  lost_time_per_phase: 5    # yellow (3) + start-up loss (2)
+  sat_flow_through: 1800    # veh/h/lane
+  sat_flow_left: 1600
+  min_cycle: 40
+  max_cycle: 160
+  min_green: 10             # tuned by tsc.tune
+
+actuated:
+  min_green: 5              # tuned by tsc.tune
+  max_green: 50
+  # extend green while a vehicle is moving in the 30 m detector zone (env.DETECTOR_M)
+
+sotl:
+  theta: 800                # vehicle-seconds on red before switching (tuned by tsc.tune)
+  mu: 3                     # don't cut a green platoon smaller than this
+  min_green: 10             # tuned by tsc.tune
+
+max_pressure:
+  min_green: 10             # tuned by tsc.tune

@@ -13,7 +13,6 @@ import json
 import os
 import random
 import re
-import shutil
 from typing import Dict, List, Tuple
 
 from tsc import DATA_RAW, DATA_SUMO
@@ -89,6 +88,27 @@ def write_routes(path: str, vehicles: List[Vehicle], id_prefix: str) -> None:
         f.write("\n".join(lines) + "\n")
 
 
+def _copy_net_with_yellows(src: str, dst: str) -> None:
+    """Copy the net, turning the dataset's all-red phases into proper yellows.
+
+    The original plan goes green -> all-red, which SUMO warns about on every start.
+    sumo-rl ignores phases containing 'y' and builds its own transitions anyway.
+    """
+    out, prev = [], None
+    with open(src) as f:
+        for line in f:
+            m = re.search(r'state="([GgrsyO]+)"', line)
+            if m:
+                state = m.group(1)
+                if set(state) == {"r"} and prev:
+                    line = line.replace(state, "".join("y" if c in "Gg" else c for c in prev))
+                else:
+                    prev = state
+            out.append(line)
+    with open(dst, "w") as f:
+        f.writelines(out)
+
+
 def lane_of_movement() -> Dict[Tuple[str, str], str]:
     """Map (in_edge, out_edge) -> incoming lane id using the SUMO net connections."""
     import sumolib
@@ -104,7 +124,7 @@ def lane_of_movement() -> Dict[Tuple[str, str], str]:
 def build_all() -> None:
     """Write the net, one route file per real hour, long_day.rou.xml and demand.json."""
     os.makedirs(DATA_SUMO, exist_ok=True)
-    shutil.copy(os.path.join(DATA_RAW, NET_SOURCE, f"{NET_SOURCE}.net.xml"), NET_FILE)
+    _copy_net_with_yellows(os.path.join(DATA_RAW, NET_SOURCE, f"{NET_SOURCE}.net.xml"), NET_FILE)
     tags = hour_tags()
     lane_map = lane_of_movement()
     demand: Dict[str, Dict[str, int]] = {}
