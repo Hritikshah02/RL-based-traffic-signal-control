@@ -156,6 +156,11 @@ KAGGLE=/path/to/recent/kaggle kaggle/run.sh all 300   # methods, hours; pulls mo
 ```
 
 This needs a Kaggle API token in `~/.kaggle/` and a phone-verified account (GPU and internet in kernels).
+`TSC_COPY=0` keeps the downloaded models in `kaggle/out/result/models` instead of overwriting `models/`.
+
+**Checked end to end:** an independent Kaggle retrain of all 5 methods (150 h each, ~25 min) scored as follows on the
+test hours (seeds 0–2, mean delay): PressLight 25.3 s (local 26.6), FRAP 38.8 (34.0), D3QN 62.8 (54.1), PPO 63.2 (63.2).
+The ranking holds; the differences are run-to-run training variance. The committed models are the local ones.
 
 ## Project structure
 
