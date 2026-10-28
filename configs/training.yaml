@@ -1,0 +1,37 @@
+# Training hyper-parameters for the learning methods.
+# Every method gets the same budget of simulated hours (1 episode = 1 real hour).
+
+common:
+  hours: 150                # simulated training hours per method
+  gamma: 0.95               # one step = 5 s, so 0.95 looks ~1-2 minutes ahead
+  eval_every: 10            # episodes between greedy checks on the validation hours
+  validation: [bctyc_07, qcyn_07]
+
+QLearning:
+  alpha: 0.1
+  eps_start: 1.0
+  eps_end: 0.02
+  reward: wait
+
+dqn:                        # shared by D3QN, PressLight, FRAP
+  lr: 0.0005
+  batch: 64
+  buffer: 100000
+  warmup: 2000              # random steps before learning
+  target_update: 1000       # steps between target-network syncs
+  eps_start: 1.0
+  eps_end: 0.02
+  eps_fraction: 0.4         # fraction of training spent decaying epsilon
+
+D3QN:       {obs: vector,     reward: wait}
+PressLight: {obs: presslight, reward: pressure}
+FRAP:       {obs: frap,       reward: queue}
+
+PPO:
+  obs: vector
+  reward: wait
+  lr: 0.0003
+  n_steps: 720              # one episode per rollout
+  batch: 180
+  epochs: 10
+  ent_coef: 0.01

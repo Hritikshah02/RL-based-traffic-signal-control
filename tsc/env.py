@@ -17,7 +17,7 @@ import os
 import random
 import uuid
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union
 
 import gymnasium as gym
 import numpy as np
@@ -172,6 +172,9 @@ class TscEnv(gym.Env):
         self._seed = seed
         self._sumo: Optional[_CountingSumo] = None
         self.scenario: Optional[Scenario] = None
+        # called as on_episode_end(env) after the episode's simulation has closed
+        # (lets training run validation sims - libsumo allows one simulation per process)
+        self.on_episode_end: Optional[Callable[["TscEnv"], None]] = None
 
         self.action_space = gym.spaces.Discrete(len(PHASE_NAMES))
         dim = {"vector": 26, "presslight": 8 * SEGMENTS + 16, "frap": 16}[obs]
@@ -219,6 +222,7 @@ class TscEnv(gym.Env):
         self.forced_switches = 0
         self._switched = False
         self._prev_wait = 0.0
+        self.episode_reward = 0.0
         self.features_now = self._features()
         return self.obs_fn(self.features_now), {"scenario": self.scenario.name}
 
@@ -308,6 +312,7 @@ class TscEnv(gym.Env):
 
         self.features_now = f = self._features()
         reward = self._reward(f)
+        self.episode_reward += reward
         self.step_log.append({
             "time": f.time,
             "queue": float(f.lane_queue.sum()),
@@ -321,6 +326,8 @@ class TscEnv(gym.Env):
         if truncated:
             self.close()   # flushes tripinfo
             info["tripinfo"] = self.tripinfo
+            if self.on_episode_end:
+                self.on_episode_end(self)
         return self.obs_fn(f), reward, False, bool(truncated), info
 
     def features(self) -> JunctionFeatures:

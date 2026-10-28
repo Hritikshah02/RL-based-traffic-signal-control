@@ -10,7 +10,7 @@ webster:
   sat_flow_left: 1600
   min_cycle: 40
   max_cycle: 160
-  min_green: 10             # tuned by tsc.tune
+  min_green: 10
 
 actuated:
   min_green: 5              # tuned by tsc.tune
@@ -20,7 +20,7 @@ actuated:
 sotl:
   theta: 800                # vehicle-seconds on red before switching (tuned by tsc.tune)
   mu: 3                     # don't cut a green platoon smaller than this
-  min_green: 10             # tuned by tsc.tune
+  min_green: 10
 
 max_pressure:
   min_green: 10             # tuned by tsc.tune
